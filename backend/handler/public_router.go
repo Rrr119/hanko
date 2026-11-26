@@ -91,7 +91,7 @@ func NewPublicRouter(cfg *config.Config, persister persistence.Persister, promet
 	tenantGroup.POST("/token_exchange", flowAPIHandler.TokenExchangeFlowHandler, webhookMiddleware)
 
 	tenantGroup.GET("/", statusHandler.Status)
-	tenantGroup.GET("/me", userHandler.Me, webhookMiddleware, sessionMiddleware)
+	tenantGroup.GET("/me", userHandler.Me, webhookMiddleware, sessionMiddleware, hankoMiddleware.PasskeyDeviceSession(persister))
 	tenantGroup.POST("/logout", userHandler.Logout, webhookMiddleware, sessionMiddleware)
 
 	health := tenantGroup.Group("/health")
@@ -114,6 +114,14 @@ func NewPublicRouter(cfg *config.Config, persister persistence.Persister, promet
 	sessions := tenantGroup.Group("/sessions", webhookMiddleware)
 	sessions.GET("/validate", sessionHandler.ValidateSession)
 	sessions.POST("/validate", sessionHandler.ValidateSessionFromBody)
+
+	passkeyDeviceHandler := NewPasskeyDeviceHandler(persister)
+	passkeyDevices := tenantGroup.Group("/passkey")
+	trustedPasskeyDevices := passkeyDevices.Group("", sessionMiddleware, hankoMiddleware.PasskeyDeviceSession(persister))
+	trustedPasskeyDevices.GET("/devices", passkeyDeviceHandler.ListDevices)
+	trustedPasskeyDevices.POST("/migration-grants", passkeyDeviceHandler.CreateMigrationGrant)
+	passkeyDevices.POST("/devices/current", passkeyDeviceHandler.RegisterCurrentDevice, sessionMiddleware)
+	passkeyDevices.POST("/devices/:device_id/lost", passkeyDeviceHandler.ReportLost, sessionMiddleware)
 
 	organizationPublicHandler := NewOrganizationPublicHandler(persister)
 	tenantGroup.POST("/organizations/roles/check", organizationPublicHandler.CheckRole, sessionMiddleware)

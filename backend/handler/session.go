@@ -67,6 +67,14 @@ func (h *SessionHandler) ValidateSession(c echo.Context) error {
 				continue
 			}
 
+			deviceTrusted, deviceErr := h.authorizeValidatedDevice(c, token, tenant.ID)
+			if deviceErr != nil {
+				return fmt.Errorf("failed to validate passkey device trust: %w", deviceErr)
+			}
+			if !deviceTrusted {
+				continue
+			}
+
 			// Check idle timeout
 			idleTimeout, _ := time.ParseDuration(tenant.Config.Session.IdleTimeout)
 			if idleTimeout > 0 && time.Since(sessionModel.LastUsed) > idleTimeout {
@@ -156,6 +164,14 @@ func (h *SessionHandler) ValidateSessionFromBody(c echo.Context) error {
 	}
 
 	if sessionModel == nil {
+		return c.JSON(http.StatusOK, dto.ValidateSessionResponse{IsValid: false})
+	}
+
+	deviceTrusted, deviceErr := h.authorizeValidatedDevice(c, token, tenant.ID)
+	if deviceErr != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to validate passkey device trust")
+	}
+	if !deviceTrusted {
 		return c.JSON(http.StatusOK, dto.ValidateSessionResponse{IsValid: false})
 	}
 

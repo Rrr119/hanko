@@ -10,6 +10,8 @@ import (
 	auditlog "github.com/teamhanko/hanko/backend/v3/audit_log"
 	"github.com/teamhanko/hanko/backend/v3/dto"
 	"github.com/teamhanko/hanko/backend/v3/flowpilot"
+	"github.com/teamhanko/hanko/backend/v3/passkey/migration"
+	"github.com/teamhanko/hanko/backend/v3/passkey/migrationsession"
 	"github.com/teamhanko/hanko/backend/v3/persistence/models"
 	"github.com/teamhanko/hanko/backend/v3/session"
 	"github.com/teamhanko/hanko/backend/v3/webhooks/events"
@@ -52,6 +54,19 @@ func (h IssueSession) Execute(c flowpilot.HookExecutionContext) error {
 		if len(amr) > 0 {
 			jwtOpts = append(jwtOpts, session.WithValue("amr", amr))
 		}
+	}
+	if c.Stash().Get(StashPathPasskeyDeviceID).Exists() {
+		deviceClaims := migration.SessionClaims{
+			DeviceID: c.Stash().Get(StashPathPasskeyDeviceID).String(),
+		}
+		if relation := c.Stash().Get(StashPathPasskeyDeviceRelation); relation.Exists() {
+			deviceClaims.Relation = migration.Relation(relation.String())
+		}
+		if trustLevel := c.Stash().Get(StashPathPasskeyDeviceTrustLevel); trustLevel.Exists() {
+			deviceClaims.TrustLevel = trustLevel.String()
+		}
+		deviceClaims.Recovered = c.Stash().Get(StashPathPasskeyRecovery).Bool()
+		jwtOpts = append(jwtOpts, migrationsession.JWTOptions(deviceClaims)...)
 	}
 
 	signedSessionToken, rawToken, err := deps.SessionManager.GenerateJWT(userJWT, deps.TenantID, jwtOpts...)

@@ -1,0 +1,3 @@
+drop_table("passkey_migration_grants")
+drop_table("passkey_device_credentials")
+drop_table("passkey_devices")

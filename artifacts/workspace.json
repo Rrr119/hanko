@@ -1,0 +1,17 @@
+{
+  "root": "/home/dev/feedback/uid38829",
+  "B": "/home/dev/feedback/uid38829",
+  "sha": "68f3a6261c4ec06231e302f29dae48bd15f7cd1f",
+  "wslDistro": "Ubuntu-26.04",
+  "source": {
+    "owner": "teamhanko",
+    "repo": "hanko",
+    "sha": "68f3a6261c4ec06231e302f29dae48bd15f7cd1f"
+  },
+  "fork": {
+    "owner": "Rrr119",
+    "repo": "hanko",
+    "cloneUrl": "https://github.com/Rrr119/hanko.git"
+  },
+  "at": "2026-11-26T04:45:31.875Z"
+}
